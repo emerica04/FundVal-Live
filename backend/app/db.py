@@ -28,6 +28,16 @@ def init_db():
     cursor.execute("""
         CREATE INDEX IF NOT EXISTS idx_funds_name ON funds(name);
     """)
+
+    # Positions table - store user holdings
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS positions (
+            code TEXT PRIMARY KEY,
+            cost REAL NOT NULL DEFAULT 0.0,
+            shares REAL NOT NULL DEFAULT 0.0,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
     
     conn.commit()
     conn.close()

@@ -39,3 +39,21 @@ export const getFundHistory = async (fundId, limit = 30) => {
 export const subscribeFund = async (fundId, data) => {
     return api.post(`/fund/${fundId}/subscribe`, data);
 };
+
+export const getAccountPositions = async () => {
+    try {
+        const response = await api.get('/account/positions');
+        return response.data;
+    } catch (error) {
+        console.error("Get positions failed", error);
+        throw error;
+    }
+};
+
+export const updatePosition = async (data) => {
+    return api.post('/account/positions', data);
+};
+
+export const deletePosition = async (code) => {
+    return api.delete(`/account/positions/${code}`);
+};

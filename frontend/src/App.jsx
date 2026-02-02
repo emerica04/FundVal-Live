@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Search, 
-  ChevronLeft
+  ChevronLeft,
+  Wallet,
+  LayoutGrid
 } from 'lucide-react';
 import { FundList } from './pages/FundList';
 import { FundDetail } from './pages/FundDetail';
+import Account from './pages/Account';
 import { SubscribeModal } from './components/SubscribeModal';
 import { searchFunds, getFundDetail } from './services/api';
 
 export default function App() {
   // --- State ---
-  const [currentView, setCurrentView] = useState('list'); // 'list' | 'detail'
+  const [currentView, setCurrentView] = useState('list'); // 'list' | 'detail' | 'account'
   
   // Initialize from localStorage
   const [watchlist, setWatchlist] = useState(() => {
@@ -28,51 +31,34 @@ export default function App() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedFund, setSelectedFund] = useState(null); 
   const [detailFundId, setDetailFundId] = useState(null); 
+  const [accountCodes, setAccountCodes] = useState(new Set());
   
   // Persist to localStorage whenever watchlist changes
   useEffect(() => {
     localStorage.setItem('fundval_watchlist', JSON.stringify(watchlist));
   }, [watchlist]);
+
+  // Fetch account codes to prevent duplicates
+  const fetchAccountCodes = async () => {
+    try {
+        const data = await getAccountPositions();
+        setAccountCodes(new Set(data.positions.map(p => p.code)));
+    } catch (e) {
+        console.error("Failed to fetch account codes", e);
+    }
+  };
+
+  useEffect(() => {
+    fetchAccountCodes();
+  }, [currentView]); // Refresh when switching views
   
   // --- Data Fetching ---
   
   // Polling for updates
   useEffect(() => {
-    const fetchUpdates = async () => {
-        // Use functional state update to get the FRESH watchlist at the moment of execution
-        setWatchlist(currentWatchlist => {
-            if (currentWatchlist.length === 0) return currentWatchlist;
-            
-            // We can't await inside the functional update, so we must loop outside?
-            // No, the standard pattern for polling mutable state is:
-            // 1. Ref or
-            // 2. Dependency on the state (which restarts the timer)
-            
-            // Reverting to the dependency approach but making it clean:
-            // The previous logic restarted the timer on every list change.
-            // That is actually acceptable for this scale.
-            // But let's make it robust against the "stale closure inside the callback" 
-            // by using a Ref for the current list, so the interval callback sees it.
-            return currentWatchlist;
-        });
-        
-        // Actually, the simplest fix for "Linus" is to just let the effect depend on `watchlist`.
-        // It restarts the timer, but who cares? It guarantees freshness.
-        // But to be "Perfect", we use a recursive setTimeout or a Ref.
-        // Let's use the Ref pattern for the watchlist to keep the interval stable.
-    };
-    
-    // ... wait, I can't put async logic easily in a sync setWatchlist.
-    // Let's go with the "Restart on Change" but fixing the inner logic to be clear.
-    
     if (watchlist.length === 0) return;
 
     const tick = async () => {
-        // We use the 'watchlist' from the closure, which IS fresh because
-        // the effect restarts whenever watchlist changes.
-        // The previous bug was: dependence on `watchlist.length` ONLY.
-        // Change dependency to `watchlist`.
-        
         try {
             const updatedList = await Promise.all(watchlist.map(async (fund) => {
                 try {
@@ -83,21 +69,15 @@ export default function App() {
                     return fund;
                 }
             }));
-            
-            // Only update if mounted (React strict mode etc) - omitted for brevity
             setWatchlist(updatedList); 
         } catch (e) {
              console.error("Polling error", e);
         }
     };
 
-    const interval = setInterval(tick, 15000); // 15s polling (Linus: 5s is for ADHD kids)
+    const interval = setInterval(tick, 15000);
     return () => clearInterval(interval);
-  }, [watchlist]); // <--- DEPEND ON THE LIST ITSELF.
-  
-  // Note: This causes the timer to reset every time data comes back (setWatchlist triggers it).
-  // effectively making it "15s after the last fetch completes". 
-  // This is actually BETTER than a fixed interval (prevents pile-up).
+  }, [watchlist]); 
 
 
   // --- Handlers ---
@@ -105,12 +85,27 @@ export default function App() {
   const handleSearch = async (e) => {
     e.preventDefault();
     if (!searchQuery) return;
+
+    // Check Account First
+    if (accountCodes.has(searchQuery)) {
+        alert('该基金已在你的持仓账户中，无需重复关注');
+        setSearchQuery('');
+        return;
+    }
+
     setLoading(true);
     
     try {
         const results = await searchFunds(searchQuery);
         if (results && results.length > 0) {
            const fundMeta = results[0];
+
+           if (accountCodes.has(fundMeta.id)) {
+                alert('该基金已在你的持仓账户中');
+                setSearchQuery('');
+                return;
+           }
+
            // Fetch initial detail
            try {
              const detail = await getFundDetail(fundMeta.id);
@@ -137,6 +132,25 @@ export default function App() {
     setWatchlist(prev => prev.filter(f => f.id !== id));
   };
 
+  const notifyPositionChange = (code, type = 'add') => {
+      if (type === 'add') {
+          // Remove from watchlist if it exists
+          setWatchlist(prev => prev.filter(f => f.id !== code));
+          // Update local account codes set
+          setAccountCodes(prev => {
+              const next = new Set(prev);
+              next.add(code);
+              return next;
+          });
+      } else if (type === 'remove') {
+          setAccountCodes(prev => {
+              const next = new Set(prev);
+              next.delete(code);
+              return next;
+          });
+      }
+  };
+
   const openSubscribeModal = (fund) => {
     setSelectedFund(fund);
     setModalOpen(true);
@@ -156,6 +170,40 @@ export default function App() {
   const handleSubscribeSubmit = (fund, formData) => {
     alert(`已更新 ${fund.name} 的订阅设置：\n发送至：${formData.email}\n阈值：涨>${formData.thresholdUp}% 或 跌<${formData.thresholdDown}%`);
     setModalOpen(false);
+  };
+
+  const handleSyncWatchlist = async (positions) => {
+      if (!positions || positions.length === 0) return;
+      
+      const existingIds = new Set(watchlist.map(f => f.id));
+      const newFunds = positions.filter(p => !existingIds.has(p.code));
+      
+      if (newFunds.length === 0) {
+          alert('所有持仓已在关注列表中');
+          return;
+      }
+      
+      setLoading(true);
+      try {
+          const addedFunds = [];
+          for (const pos of newFunds) {
+              try {
+                  const detail = await getFundDetail(pos.code);
+                  addedFunds.push({ ...detail, trusted: true });
+              } catch (e) {
+                  console.error(`Failed to sync ${pos.code}`, e);
+              }
+          }
+          
+          if (addedFunds.length > 0) {
+              setWatchlist(prev => [...prev, ...addedFunds]);
+              alert(`成功同步 ${addedFunds.length} 个基金到关注列表`);
+          }
+      } catch (e) {
+          alert('同步失败');
+      } finally {
+          setLoading(false);
+      }
   };
 
   const currentDetailFund = detailFundId ? watchlist.find(f => f.id === detailFundId) : null;
@@ -178,14 +226,25 @@ export default function App() {
                   <ChevronLeft className="w-6 h-6" />
                 </button>
               ) : (
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">
-                  V
+                <div className="flex gap-2">
+                   <button 
+                      onClick={() => setCurrentView('list')}
+                      className={`p-2 rounded-lg transition-colors ${currentView === 'list' ? 'bg-blue-100 text-blue-700' : 'hover:bg-slate-100 text-slate-500'}`}
+                   >
+                      <LayoutGrid className="w-6 h-6" />
+                   </button>
+                   <button 
+                      onClick={() => setCurrentView('account')}
+                      className={`p-2 rounded-lg transition-colors ${currentView === 'account' ? 'bg-blue-100 text-blue-700' : 'hover:bg-slate-100 text-slate-500'}`}
+                   >
+                      <Wallet className="w-6 h-6" />
+                   </button>
                 </div>
               )}
               
               <div>
                 <h1 className="text-lg font-bold text-slate-800 leading-tight">
-                  {currentView === 'detail' ? '基金详情' : 'FundVal Live'}
+                  {currentView === 'detail' ? '基金详情' : (currentView === 'account' ? '我的账户' : 'FundVal Live')}
                 </h1>
                 <p className="text-xs text-slate-400">
                   {currentView === 'detail' ? '盘中实时估值分析' : '盘中估值参考工具'}
@@ -238,6 +297,14 @@ export default function App() {
             onRemove={removeFund}
             onSubscribe={openSubscribeModal}
           />
+        )}
+
+        {currentView === 'account' && (
+           <Account 
+                onSelectFund={handleCardClick} 
+                onPositionChange={notifyPositionChange}
+                onSyncWatchlist={handleSyncWatchlist}
+           />
         )}
 
         {currentView === 'detail' && (

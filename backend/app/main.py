@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from .routers import funds, ai
+from .routers import funds, ai, account
 from .db import init_db
 from .services.scheduler import start_scheduler
 
@@ -28,3 +28,4 @@ app.add_middleware(
 
 app.include_router(funds.router, prefix="/api")
 app.include_router(ai.router, prefix="/api")
+app.include_router(account.router, prefix="/api")
