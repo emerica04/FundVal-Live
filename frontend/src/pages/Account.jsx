@@ -139,7 +139,7 @@ const Account = ({ onSelectFund, onPositionChange, onSyncWatchlist }) => {
       {/* 3. Table */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
+          <table className="w-full text-base text-left">
             <thead className="bg-slate-50 text-slate-500 font-medium text-xs uppercase tracking-wider">
               <tr>
                 <th className="px-4 py-3 text-left">基金</th>
@@ -151,7 +151,7 @@ const Account = ({ onSelectFund, onPositionChange, onSyncWatchlist }) => {
                 <th className="px-4 py-3 text-center">操作</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-sm">
+            <tbody className="divide-y divide-slate-100 text-base">
               {positions.length === 0 ? (
                 <tr>
                   <td colSpan="7" className="px-4 py-8 text-center text-slate-400">
