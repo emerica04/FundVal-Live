@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 import os
 import sys
 
-from .routers import funds, ai, account
+from .routers import funds, ai, account, settings
 from .db import init_db
 from .services.scheduler import start_scheduler
 
@@ -34,6 +34,7 @@ app.add_middleware(
 app.include_router(funds.router, prefix="/api")
 app.include_router(ai.router, prefix="/api")
 app.include_router(account.router, prefix="/api")
+app.include_router(settings.router, prefix="/api")
 
 # 静态文件服务（前端）
 # 判断是否为打包后的应用

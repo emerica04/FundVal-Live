@@ -65,3 +65,4 @@ webencodings==0.5.1
 xlrd==2.0.2
 xxhash==3.6.0
 zstandard==0.25.0
+cryptography==46.0.4

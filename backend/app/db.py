@@ -64,7 +64,33 @@ def init_db():
             UNIQUE(code, email)
         )
     """)
-    
+
+    # Settings table - store user configuration
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS settings (
+            key TEXT PRIMARY KEY,
+            value TEXT,
+            encrypted INTEGER DEFAULT 0,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    # 初始化默认配置（如果不存在）
+    default_settings = [
+        ('OPENAI_API_KEY', '', 1),
+        ('OPENAI_API_BASE', 'https://api.openai.com/v1', 0),
+        ('AI_MODEL_NAME', 'gpt-3.5-turbo', 0),
+        ('SMTP_HOST', 'smtp.gmail.com', 0),
+        ('SMTP_PORT', '587', 0),
+        ('SMTP_USER', '', 0),
+        ('SMTP_PASSWORD', '', 1),
+        ('EMAIL_FROM', 'noreply@fundval.live', 0),
+    ]
+
+    cursor.executemany("""
+        INSERT OR IGNORE INTO settings (key, value, encrypted) VALUES (?, ?, ?)
+    """, default_settings)
+
     conn.commit()
     conn.close()
     logger.info("Database initialized.")

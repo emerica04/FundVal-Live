@@ -1,19 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Search, 
+import {
+  Search,
   ChevronLeft,
   Wallet,
-  LayoutGrid
+  LayoutGrid,
+  Settings as SettingsIcon
 } from 'lucide-react';
 import { FundList } from './pages/FundList';
 import { FundDetail } from './pages/FundDetail';
 import Account from './pages/Account';
+import Settings from './pages/Settings';
 import { SubscribeModal } from './components/SubscribeModal';
 import { searchFunds, getFundDetail, getAccountPositions, subscribeFund } from './services/api';
 
 export default function App() {
   // --- State ---
-  const [currentView, setCurrentView] = useState('list'); // 'list' | 'detail' | 'account'
+  const [currentView, setCurrentView] = useState('list'); // 'list' | 'detail' | 'account' | 'settings'
   
   // Initialize from localStorage
   const [watchlist, setWatchlist] = useState(() => {
@@ -235,24 +237,30 @@ export default function App() {
                 </button>
               ) : (
                 <div className="flex gap-2">
-                   <button 
+                   <button
                       onClick={() => setCurrentView('list')}
                       className={`p-2 rounded-lg transition-colors ${currentView === 'list' ? 'bg-blue-100 text-blue-700' : 'hover:bg-slate-100 text-slate-500'}`}
                    >
                       <LayoutGrid className="w-6 h-6" />
                    </button>
-                   <button 
+                   <button
                       onClick={() => setCurrentView('account')}
                       className={`p-2 rounded-lg transition-colors ${currentView === 'account' ? 'bg-blue-100 text-blue-700' : 'hover:bg-slate-100 text-slate-500'}`}
                    >
                       <Wallet className="w-6 h-6" />
+                   </button>
+                   <button
+                      onClick={() => setCurrentView('settings')}
+                      className={`p-2 rounded-lg transition-colors ${currentView === 'settings' ? 'bg-blue-100 text-blue-700' : 'hover:bg-slate-100 text-slate-500'}`}
+                   >
+                      <SettingsIcon className="w-6 h-6" />
                    </button>
                 </div>
               )}
               
               <div>
                 <h1 className="text-lg font-bold text-slate-800 leading-tight">
-                  {currentView === 'detail' ? '基金详情' : (currentView === 'account' ? '我的账户' : 'FundVal Live')}
+                  {currentView === 'detail' ? '基金详情' : (currentView === 'account' ? '我的账户' : (currentView === 'settings' ? '设置' : 'FundVal Live'))}
                 </h1>
                 <p className="text-xs text-slate-400">
                   {currentView === 'detail' ? '盘中实时估值分析' : '盘中估值参考工具'}
@@ -316,8 +324,12 @@ export default function App() {
            />
         )}
 
+        {currentView === 'settings' && (
+          <Settings />
+        )}
+
         {currentView === 'detail' && (
-          <FundDetail 
+          <FundDetail
             fund={currentDetailFund}
             onSubscribe={openSubscribeModal}
           />
