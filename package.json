@@ -3,6 +3,13 @@
   "version": "1.0.0",
   "description": "盘中基金实时估值与逻辑审计系统",
   "main": "electron/main.js",
+  "author": "Jasmine",
+  "license": "MIT",
+  "homepage": "https://github.com/Ye-Yu-Mo/FundVal-Live",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Ye-Yu-Mo/FundVal-Live.git"
+  },
   "scripts": {
     "electron": "electron .",
     "electron:dev": "electron . --dev",
@@ -61,7 +68,10 @@
     "linux": {
       "icon": "electron/icon.png",
       "target": ["AppImage", "deb"],
-      "category": "Finance"
+      "category": "Finance",
+      "maintainer": "Jasmine",
+      "vendor": "FundVal",
+      "synopsis": "盘中基金实时估值与逻辑审计系统"
     },
     "nsis": {
       "oneClick": false,
@@ -74,6 +84,6 @@
     "electron": "^28.0.0",
     "electron-builder": "^24.9.1"
   },
-  "author": "FundVal Team",
+  "author": "Jasmine",
   "license": "MIT"
 }
