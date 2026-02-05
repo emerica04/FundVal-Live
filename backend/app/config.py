@@ -1,10 +1,20 @@
 import os
+import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+# 判断是否为打包后的应用
+if getattr(sys, 'frozen', False):
+    # 打包后：使用用户目录
+    BASE_DIR = Path.home() / '.fundval-live'
+    BASE_DIR.mkdir(parents=True, exist_ok=True)
+else:
+    # 开发模式：使用项目目录
+    BASE_DIR = Path(__file__).resolve().parent.parent
+
 # Load .env from project root (one level up from backend)
-load_dotenv(BASE_DIR.parent / ".env")
+if not getattr(sys, 'frozen', False):
+    load_dotenv(BASE_DIR.parent / ".env")
 
 class Config:
     # Database

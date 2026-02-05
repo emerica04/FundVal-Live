@@ -29,3 +29,9 @@ __pycache__
 .env
 backend/data/fund.db
 *.pid
+# Electron build
+release/
+build/
+
+# PyInstaller
+*.spec.backup

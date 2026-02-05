@@ -97,31 +97,18 @@ export default function App() {
     e.preventDefault();
     if (!searchQuery) return;
 
-    // Check Account First
-    if (accountCodes.has(searchQuery)) {
-        alert('该基金已在你的持仓账户中，无需重复关注');
-        setSearchQuery('');
-        return;
-    }
-
     setLoading(true);
-    
+
     try {
         const results = await searchFunds(searchQuery);
         if (results && results.length > 0) {
            const fundMeta = results[0];
 
-           if (accountCodes.has(fundMeta.id)) {
-                alert('该基金已在你的持仓账户中');
-                setSearchQuery('');
-                return;
-           }
-
            // Fetch initial detail
            try {
              const detail = await getFundDetail(fundMeta.id);
              const newFund = { ...fundMeta, ...detail, trusted: true };
-             
+
              if (!watchlist.find(f => f.id === newFund.id)) {
                   setWatchlist(prev => [...prev, newFund]);
              }
@@ -145,8 +132,6 @@ export default function App() {
 
   const notifyPositionChange = (code, type = 'add') => {
       if (type === 'add') {
-          // Remove from watchlist if it exists
-          setWatchlist(prev => prev.filter(f => f.id !== code));
           // Update local account codes set
           setAccountCodes(prev => {
               const next = new Set(prev);

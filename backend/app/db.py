@@ -1,10 +1,16 @@
 import sqlite3
 import logging
+import os
+from pathlib import Path
 from .config import Config
 
 logger = logging.getLogger(__name__)
 
 def get_db_connection():
+    # 确保数据库目录存在
+    db_dir = Path(Config.DB_PATH).parent
+    db_dir.mkdir(parents=True, exist_ok=True)
+
     conn = sqlite3.connect(Config.DB_PATH, check_same_thread=False, timeout=30.0)
     conn.row_factory = sqlite3.Row
     # Enable WAL mode for better concurrency

@@ -28,12 +28,30 @@
 
 ## 快速开始
 
-### 环境要求
+### 方式一：桌面应用（推荐）
+
+**下载安装包，双击即用，无需配置环境**
+
+1. 前往 [Releases](https://github.com/Ye-Yu-Mo/FundVal-Live/releases) 下载最新版本
+   - **macOS**: `FundVal-Live-x.x.x.dmg`
+   - **Windows**: `FundVal-Live-Setup-x.x.x.exe`
+   - **Linux**: `FundVal-Live-x.x.x.AppImage`
+
+2. 安装并启动
+
+3. （可选）配置 AI 分析
+   - 首次启动后，在设置中填入 OpenAI API Key
+
+### 方式二：命令行运行
+
+**适合开发者和需要自定义配置的用户**
+
+#### 环境要求
 - Python 3.13+
 - Node.js 18+
 - uv (Python 包管理工具)
 
-### 1. 配置 AI 分析（可选）
+#### 1. 配置 AI 分析（可选）
 
 在项目根目录创建 `.env` 文件：
 
@@ -44,7 +62,7 @@ OPENAI_API_BASE=https://api.openai.com/v1
 AI_MODEL_NAME=deepseek-chat
 ```
 
-### 2. 一键启动
+#### 2. 一键启动
 
 ```bash
 # 自动安装依赖 + 后台运行 + 日志记录
@@ -57,7 +75,7 @@ tail -f logs/backend.log
 ./stop.sh
 ```
 
-### 3. 访问
+#### 3. 访问
 
 打开浏览器访问 `http://localhost:5173`
 
