@@ -9,6 +9,18 @@
 
 ---
 
+## 目录
+
+- [预览](#预览)
+- [快速开始](#快速开始)
+  - [方式一：桌面应用（推荐）](#方式一桌面应用推荐)
+  - [方式二：Docker 部署（推荐服务器部署）](#方式二docker-部署推荐服务器部署)
+  - [方式三：命令行运行](#方式三命令行运行)
+- [核心功能](#核心功能)
+- [技术架构](#技术架构)
+
+---
+
 ## 预览
 
 ### 资金看板
@@ -77,7 +89,58 @@ sudo dpkg -i fundval-live_*_amd64.deb
 
 ---
 
-### 方式二：命令行运行
+### 方式二：Docker 部署（推荐服务器部署）
+
+**一键部署，无需配置环境，适合服务器或 NAS**
+
+#### 1. 安装 Docker
+
+- **Linux**: `curl -fsSL https://get.docker.com | sh`
+- **macOS/Windows**: 下载 [Docker Desktop](https://www.docker.com/products/docker-desktop)
+
+#### 2. 启动服务
+
+```bash
+# 克隆项目
+git clone https://github.com/Ye-Yu-Mo/FundVal-Live.git
+cd FundVal-Live
+
+# （可选）配置环境变量
+cp .env.docker .env
+# 编辑 .env 填入 API Key 等配置
+
+# 启动服务
+docker-compose up -d
+
+# 查看日志
+docker-compose logs -f
+```
+
+#### 3. 访问
+
+打开浏览器访问 `http://localhost:21345`
+
+#### 4. 管理
+
+```bash
+# 停止服务
+docker-compose down
+
+# 更新服务
+git pull
+docker-compose up -d --build
+
+# 查看状态
+docker-compose ps
+```
+
+#### 数据持久化
+
+数据存储在 Docker volume `fundval-data` 中，即使删除容器也不会丢失。
+
+---
+
+### 方式三：命令行运行
 
 **适合开发者和需要自定义配置的用户**
 
