@@ -36,6 +36,19 @@ app.include_router(ai.router, prefix="/api")
 app.include_router(account.router, prefix="/api")
 app.include_router(settings.router, prefix="/api")
 
+# Project info endpoint
+@app.get("/api/info")
+async def get_project_info():
+    """返回项目信息"""
+    return {
+        "name": "FundVal Live",
+        "version": "1.0.1",
+        "description": "盘中基金实时估值与逻辑审计系统",
+        "github": "https://github.com/Ye-Yu-Mo/FundVal-Live",
+        "issues": "https://github.com/Ye-Yu-Mo/FundVal-Live/issues",
+        "releases": "https://github.com/Ye-Yu-Mo/FundVal-Live/releases"
+    }
+
 # 静态文件服务（前端）
 # 判断是否为打包后的应用
 if getattr(sys, 'frozen', False):
