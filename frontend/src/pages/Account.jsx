@@ -32,7 +32,18 @@ const SORT_OPTIONS = [
 ];
 
 const Account = ({ onSelectFund, onPositionChange, onSyncWatchlist, syncLoading, isActive }) => {
-  const [data, setData] = useState({ summary: {}, positions: [] });
+  // 初始化时从 localStorage 读取缓存
+  const [data, setData] = useState(() => {
+    try {
+      const cached = localStorage.getItem('account_data_cache');
+      if (cached) {
+        return JSON.parse(cached);
+      }
+    } catch (e) {
+      console.error('Failed to load cached account data', e);
+    }
+    return { summary: {}, positions: [] };
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -72,10 +83,10 @@ const Account = ({ onSelectFund, onPositionChange, onSyncWatchlist, syncLoading,
   // 缓存管理
   const lastFetchTimeRef = useRef(Date.now());
 
-  const fetchData = async (retryCount = 0) => {
-    // 先尝试从 localStorage 读取缓存，立即显示
+  const fetchData = async (retryCount = 0, silent = true) => {
+    // 先从 localStorage 读取缓存，立即显示
     const cachedData = localStorage.getItem('account_data_cache');
-    if (cachedData && !data.positions.length) {
+    if (cachedData) {
       try {
         const parsed = JSON.parse(cachedData);
         setData(parsed);
@@ -84,7 +95,7 @@ const Account = ({ onSelectFund, onPositionChange, onSyncWatchlist, syncLoading,
       }
     }
 
-    setLoading(true);
+    if (!silent) setLoading(true);
     setError(null);
     try {
       const res = await getAccountPositions();
@@ -100,39 +111,29 @@ const Account = ({ onSelectFund, onPositionChange, onSyncWatchlist, syncLoading,
       if (retryCount < 2) {
         const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s
         console.log(`Retrying in ${delay}ms... (attempt ${retryCount + 1}/2)`);
-        setTimeout(() => fetchData(retryCount + 1), delay);
+        setTimeout(() => fetchData(retryCount + 1, silent), delay);
       } else {
         setError('加载账户数据失败，请检查后端服务是否启动');
       }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
   useEffect(() => {
-    // Delay initial fetch to give backend time to start
-    const timer = setTimeout(() => fetchData(), 500);
-    return () => clearTimeout(timer);
+    // 立即静默刷新一次
+    fetchData();
   }, []);
 
-  // 当页面切换回来时智能刷新数据
-  const isFirstRender = useRef(true);
-  const CACHE_DURATION = 30000; // 30秒缓存
-
+  // 轮询机制：每 15 秒自动刷新数据（静默模式）
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-    if (isActive) {
-      const now = Date.now();
-      const timeSinceLastFetch = now - lastFetchTimeRef.current;
+    if (!isActive) return;
 
-      // 只有超过缓存时间才刷新
-      if (timeSinceLastFetch > CACHE_DURATION) {
-        fetchData();
-      }
-    }
+    const interval = setInterval(() => {
+      fetchData(); // 静默刷新
+    }, 15000);
+
+    return () => clearInterval(interval);
   }, [isActive]);
 
   // 点击外部关闭下拉菜单

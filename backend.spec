@@ -16,9 +16,15 @@ if not os.path.exists(mini_racer_lib):
 if not os.path.exists(mini_racer_lib):
     mini_racer_lib = os.path.join(mini_racer_path, 'mini_racer.dll')  # Windows
 
+# 获取 py_mini_racer 数据文件（icudtl.dat）
+mini_racer_data = os.path.join(mini_racer_path, 'icudtl.dat')
+
 binaries_list = []
+datas_list = []
 if os.path.exists(mini_racer_lib):
     binaries_list.append((mini_racer_lib, 'py_mini_racer'))
+if os.path.exists(mini_racer_data):
+    datas_list.append((mini_racer_data, 'py_mini_racer'))
 
 a = Analysis(
     ['backend/run.py'],
@@ -28,7 +34,7 @@ a = Analysis(
         ('backend/app', 'app'),
         (akshare_data, 'akshare/file_fold'),
         ('frontend/dist', 'fundval-live'),
-    ],
+    ] + datas_list,
     hiddenimports=[
         'uvicorn.logging',
         'uvicorn.loops',
